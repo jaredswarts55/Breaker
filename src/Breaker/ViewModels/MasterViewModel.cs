@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Autofac;
 
 namespace Breaker.ViewModels
@@ -9,7 +10,6 @@ namespace Breaker.ViewModels
     /// <summary>
     /// Handles screens management and wiring
     /// </summary>
-    [AddINotifyPropertyChangedInterface]
     public class MasterViewModel : Conductor<object>, IShell, IHandle<ChangeMainScreenEvent>
     {
         /// <summary>

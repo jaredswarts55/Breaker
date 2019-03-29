@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Caliburn.Micro" Version="3.2.0" />
     <PackageReference Include="Fody" Version="4.2.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -18,14 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Commands\Handlers\" />
-    <Folder Include="Commands\Requests\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Caliburn.Micro">
-      <HintPath>..\..\..\..\Users\jared\.nuget\packages\caliburn.micro.core\3.2.0\lib\net45\Caliburn.Micro.dll</HintPath>
-    </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="System.Web" />
   </ItemGroup>
 

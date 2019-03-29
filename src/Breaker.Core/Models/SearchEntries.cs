@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Web;
+using Breaker.Core.Commands.Requests;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
 
@@ -11,6 +13,7 @@ namespace Breaker.ViewModels.SubModels
         public static SearchEntry[] AllEntries = new (string name, string path, string workingDirectory, string arguments)[]
                                                  {
                                                      ("Powershell", @"powershell.exe", @"c:\src\", "-NoExit -command \"& {Set-Location c:\\src\\}\" "),
+                                                     ("Reload Breaker", @"powershell.exe", @"c:\opt\Breaker", "-noprofile -command \"& { .\\update.ps1 }\" "),
                                                      ("Cmder", @"C:\opt\cmder\Cmder.exe", @"c:\src\", null),
                                                      ("Shortcuts", @"C:\Program Files\AutoHotkey\AutoHotkey.exe", null, @"C:\opt\Shortcuts.ahk")
                                                  }
@@ -42,9 +45,21 @@ namespace Breaker.ViewModels.SubModels
             },
             new SlashCommand
             {
+                Name = "doc",
+                DisplayTemplate = "Search Docs for '{0}'",
+                CreateRequest = s => new ExecuteSearchDocsRequest {CommandText = $"start dash-plugin://query={Uri.EscapeUriString(s)}", Hide = true}
+            },
+            new SlashCommand
+            {
                 Name = "g",
                 DisplayTemplate = "Google Search '{0}'",
                 CreateRequest = s => new ExecuteGoogleSearchRequest {SearchText = s }
+            },
+            new SlashCommand
+            {
+                Name = "guid",
+                DisplayTemplate = "Copy a New Guid to Clipboard",
+                CreateRequest = s => new ExecuteCopyGuidRequest()
             },
             new SlashCommand
             {

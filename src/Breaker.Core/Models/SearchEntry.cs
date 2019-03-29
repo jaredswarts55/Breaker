@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics.Tracing;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Breaker.Core.Annotations;
 using PropertyChanged;
 
 namespace Breaker.Core.Models
 {
-    [AddINotifyPropertyChangedInterface]
-    public class SearchEntry
+    public class SearchEntry : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
         private readonly object _padlock = new object();
         private readonly object _displayLock = new object();
         private string[] _terms = null;
@@ -55,5 +59,6 @@ namespace Breaker.Core.Models
             }
             set => _terms = value?.Select(x => x.ToLower()).ToArray();
         }
+
     }
 }

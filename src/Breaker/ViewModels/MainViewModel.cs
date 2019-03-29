@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,7 +24,6 @@ namespace Breaker.ViewModels
     /// <summary>
     /// Main view model for the application
     /// </summary>
-    [AddINotifyPropertyChangedInterface]
     public class MainViewModel : ViewAware, IHandle<ShowHotkeyPressedEvent>, IHandle<ShowResultEvent>, IHandle<ClearSearchEvent>
     {
         /// <summary>
@@ -131,7 +131,7 @@ namespace Breaker.ViewModels
             }
         }
 
-        public async void UpdateSearch(KeyEventArgs context)
+        public async void UpdateSearch()
         {
             if (string.IsNullOrEmpty(SearchText) || SearchText.Length <= 0)
             {

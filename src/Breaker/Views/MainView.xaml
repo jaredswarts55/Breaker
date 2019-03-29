@@ -25,7 +25,8 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Margin="4 4 0 0" Grid.Row="0" FontWeight="Bold" x:Name="Header"></TextBlock>
-        <TextBox Grid.Row="1" HorizontalContentAlignment="Stretch" x:Name="SearchText"  cal:Message.Attach="[Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)]; [Event KeyUp] = [Action UpdateSearch($eventArgs)]">
+        <!--<TextBox Grid.Row="1" HorizontalContentAlignment="Stretch" x:Name="SearchText" >-->
+        <TextBox Grid.Row="1" HorizontalContentAlignment="Stretch" x:Name="SearchText" cal:Message.Attach="[Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)]; [Event TextChanged] = [Action UpdateSearch()]">
         </TextBox>
         <ListBox Grid.Row="2" SelectedItem="{Binding SelectedFoundItem}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" ItemsSource="{Binding FoundItems}"
                  cal:Message.Attach="[Event SelectionChanged] = [Action SelectionChanged($eventArgs)]; [Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)]"
