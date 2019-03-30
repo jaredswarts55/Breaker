@@ -43,7 +43,7 @@ namespace Breaker.Windows
         {
             base.OnSourceInitialized(e);
             _hotKeys = new HotKeyHelper(this, HandleHotKey);
-            _hotKey1 = _hotKeys.ListenForHotKey(System.Windows.Forms.Keys.P, HotKeyModifiers.Alt | HotKeyModifiers.Control);
+            _hotKey1 = _hotKeys.ListenForHotKey(System.Windows.Forms.Keys.Space, HotKeyModifiers.Shift| HotKeyModifiers.Control);
         }
 
         // --------------------------------------------------------------------------
