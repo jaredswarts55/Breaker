@@ -57,6 +57,12 @@ namespace Breaker.ViewModels.SubModels
             },
             new SlashCommand
             {
+                Name = "gl",
+                DisplayTemplate = "Google Feeling Lucky Search '{0}'",
+                CreateRequest = s => new ExecuteGoogleSearchRequest {SearchText = s, FeelingLucky = true }
+            },
+            new SlashCommand
+            {
                 Name = "guid",
                 DisplayTemplate = "Copy a New Guid to Clipboard",
                 CreateRequest = s => new ExecuteCopyGuidRequest()

@@ -21,11 +21,12 @@ namespace Breaker.Core.Listings.Handlers
     {
         public Task<Unit> Handle(ExecuteGoogleSearchRequest request, CancellationToken cancellationToken)
         {
+            var feelingLuckyText = request.FeelingLucky ? "&btnI" : "";
             var process = new Process
                           {
                               StartInfo = new ProcessStartInfo
                                           {
-                                              Arguments = $"https://www.google.com/search?q={HttpUtility.UrlEncode(request.SearchText)}",
+                                              Arguments = $"https://www.google.com/search?q={HttpUtility.UrlEncode(request.SearchText)}{feelingLuckyText}",
                                               FileName = "chrome.exe",
                                           }
                           };
