@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using Autofac;
 using Breaker.Core.Models;
+using Breaker.Core.Services.Base;
 using Breaker.Startup;
 using Breaker.ViewModels;
 using Breaker.ViewModels.SubModels;
@@ -79,7 +80,8 @@ namespace Breaker
         protected override void OnStartup(object sender, StartupEventArgs e)
         {
             DisplayRootViewFor<IShell>();
-            SearchEntries.LoadStartMenuItems(GetShortcutTarget);
+            var userSettingsService = Container.Resolve<IUserSettingsService>();
+            SearchEntries.InitializeSearch(GetShortcutTarget, userSettingsService);
             
         }
         public static (string path, string arguments) GetShortcutTarget(string lnkPath)

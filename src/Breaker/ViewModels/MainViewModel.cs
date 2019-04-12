@@ -10,6 +10,9 @@ using System.Windows.Input;
 using Breaker.Core.Events;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
+using Breaker.Core.Models.Settings;
+using Breaker.Core.Services;
+using Breaker.Core.Services.Base;
 using Breaker.Events;
 using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
@@ -34,16 +37,18 @@ namespace Breaker.ViewModels
         private readonly IMediator _mediator;
 
         private string _lastCompletedSearchString = string.Empty;
+        private UserSettings _settings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainViewModel"/> class
         /// </summary>
         /// <param name="eventAggregator">The events</param>
-        public MainViewModel(IEventAggregator eventAggregator, IMediator mediator)
+        public MainViewModel(IEventAggregator eventAggregator, IMediator mediator, IUserSettingsService userSettingsService)
         {
             _eventAggregator = eventAggregator;
             _mediator = mediator;
             _eventAggregator.Subscribe(this);
+            _settings = userSettingsService.GetUserSettings();
         }
         public string SearchText { get; set; }
 
@@ -114,14 +119,14 @@ namespace Breaker.ViewModels
             var (commandText, _) = ParseCommandText(SearchText);
             if (closeWindow)
                 ClearSearchAndHide();
-            await _mediator.Send(slashCommand.CreateRequest(commandText));
+            await _mediator.Send(slashCommand.CreateRequest(commandText, _settings));
         }
         public async void CopyItem(SearchEntry eventArgs)
         {
             if (eventArgs is SlashCommand slashCommand)
             {
                 var toClipboard = slashCommand.CurrentResult;
-                if(slashCommand.ProcessResultForClipboard != null)
+                if (slashCommand.ProcessResultForClipboard != null)
                     toClipboard = slashCommand.ProcessResultForClipboard(toClipboard);
                 Clipboard.SetText(toClipboard);
             }

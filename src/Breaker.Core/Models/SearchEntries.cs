@@ -1,33 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Web;
 using Breaker.Core.Commands.Requests;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
+using Breaker.Core.Models.Settings;
+using Breaker.Core.Services.Base;
 
 namespace Breaker.ViewModels.SubModels
 {
     public class SearchEntries
     {
-        public static SearchEntry[] AllEntries = new (string name, string path, string workingDirectory, string arguments)[]
-                                                 {
-                                                     ("Powershell", @"powershell.exe", @"c:\src\", "-NoExit -command \"& {Set-Location c:\\src\\}\" "),
-                                                     ("Reload Breaker", @"powershell.exe", @"c:\opt\Breaker", "-noprofile -command \"& { .\\update.ps1 }\" "),
-                                                     ("Cmder", @"C:\opt\cmder\Cmder.exe", @"c:\src\", null),
-                                                     ("Shortcuts", @"C:\Program Files\AutoHotkey\AutoHotkey.exe", null, @"C:\opt\Shortcuts.ahk")
-                                                 }
-                                                 .Select(
-                                                     x => new SearchEntry
-                                                     {
-                                                         Name = x.name,
-                                                         Path = x.path,
-                                                         WorkingDirectory = x.workingDirectory,
-                                                         Arguments = x.arguments,
-                                                         Priority = 1
-                                                     }
-                                                 )
-                                                 .ToArray();
+        public static SearchEntry[] AllEntries = new SearchEntry[0];
 
         public static SlashCommand[] Commands =
         {
@@ -35,54 +19,67 @@ namespace Breaker.ViewModels.SubModels
             {
                 Name = "cmd",
                 DisplayTemplate = "Run Command '{0}' in CMD",
-                CreateRequest = s => new ExecuteRunCommandRequest {CommandText = s, Hide = false}
+                CreateRequest = (s, userSettings) => new ExecuteRunCommandRequest {CommandText = s, Hide = false}
             },
             new SlashCommand
             {
                 Name = "run",
                 DisplayTemplate = "Run Command '{0}'",
-                CreateRequest = s => new ExecuteRunCommandRequest {CommandText = s, Hide = true}
+                CreateRequest = (s, userSettings) => new ExecuteRunCommandRequest {CommandText = s, Hide = true}
             },
             new SlashCommand
             {
                 Name = "doc",
                 DisplayTemplate = "Search Docs for '{0}'",
-                CreateRequest = s => new ExecuteSearchDocsRequest {CommandText = $"start dash-plugin://query={Uri.EscapeUriString(s)}", Hide = true}
+                CreateRequest = (s, userSettings) => new ExecuteSearchDocsRequest {CommandText = $"start dash-plugin://query={Uri.EscapeUriString(s)}", Hide = true}
             },
             new SlashCommand
             {
                 Name = "g",
                 DisplayTemplate = "Google Search '{0}'",
-                CreateRequest = s => new ExecuteGoogleSearchRequest {SearchText = s }
+                CreateRequest = (s, userSettings) => new ExecuteGoogleSearchRequest {SearchText = s}
             },
             new SlashCommand
             {
                 Name = "gl",
                 DisplayTemplate = "Google Feeling Lucky Search '{0}'",
-                CreateRequest = s => new ExecuteGoogleSearchRequest {SearchText = s, FeelingLucky = true }
+                CreateRequest = (s, userSettings) => new ExecuteGoogleSearchRequest {SearchText = s, FeelingLucky = true}
             },
             new SlashCommand
             {
                 Name = "guid",
                 DisplayTemplate = "Copy a New Guid to Clipboard",
-                CreateRequest = s => new ExecuteCopyGuidRequest()
+                CreateRequest = (s, userSettings) => new ExecuteCopyGuidRequest()
             },
             new SlashCommand
             {
                 Name = "js",
                 DisplayTemplate = "Javascript '{0}'",
                 RunOnType = true,
-                ProcessResultForClipboard = (string s) => s.Trim('"', ' '),
-                CreateRequest = s => new ExecuteJavascriptRequest {Javascript = s }
+                ProcessResultForClipboard = s => s.Trim('"', ' '),
+                CreateRequest = (s, userSettings) => new ExecuteJavascriptRequest {Javascript = s}
             }
         };
 
-        public static void LoadStartMenuItems(Func<string, (string path, string arguments)> getShortcutTarget)
+        public static void InitializeSearch(Func<string, (string path, string arguments)> getShortcutTarget, IUserSettingsService userSettingsService)
         {
+            var userSettings = userSettingsService.GetUserSettings();
             var userStartMenu = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
             var commonStartMenu = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
             var userStartMenuLinks = Directory.GetFiles(userStartMenu, "*.lnk", SearchOption.AllDirectories);
             var commonStartMenuLinks = Directory.GetFiles(commonStartMenu, "*.lnk", SearchOption.AllDirectories);
+            Commands = Commands.Where(x => userSettings.EnabledCommands.Any(y => string.Equals(y, x.Name, StringComparison.CurrentCultureIgnoreCase))).ToArray();
+
+            AllEntries = userSettings.QuickRuns.Select(
+                x => new SearchEntry
+                     {
+                         Path = x.Path,
+                         Arguments = x.Arguments,
+                         Name = x.Name,
+                         WorkingDirectory = x.WorkingDirectory,
+                         Priority = 1
+                     }
+            ).ToArray();
             AllEntries = userStartMenuLinks.Union(commonStartMenuLinks)
                                            .Select(
                                                x =>
@@ -90,26 +87,25 @@ namespace Breaker.ViewModels.SubModels
                                                    var (targetPath, arguments) = getShortcutTarget(x);
                                                    var executableName = Path.GetFileName(x);
                                                    var entry = new
-                                                   {
-                                                       shortcutPath = x,
-                                                       target = targetPath,
-                                                       arguments,
-                                                       fileName = Path.GetFileNameWithoutExtension(x),
-                                                       executableName
-                                                   };
+                                                               {
+                                                                   shortcutPath = x,
+                                                                   target = targetPath,
+                                                                   arguments,
+                                                                   fileName = Path.GetFileNameWithoutExtension(x),
+                                                                   executableName
+                                                               };
                                                    return entry;
                                                }
                                            ).Select(
                                                x => new SearchEntry
-                                               {
-                                                   Name = $"{x.fileName}",
-                                                   Path = x.shortcutPath,
-                                                   Keywords = new[] { x.fileName },
-                                                   Display = $"{x.target} {x.arguments}".Trim(),
-                                                   Terms = new[] { x.fileName, x.executableName }
-                                               }
+                                                    {
+                                                        Name = $"{x.fileName}",
+                                                        Path = x.shortcutPath,
+                                                        Keywords = new[] {x.fileName},
+                                                        Display = $"{x.target} {x.arguments}".Trim(),
+                                                        Terms = new[] {x.fileName, x.executableName}
+                                                    }
                                            ).Union(AllEntries).ToArray();
-            var test = AllEntries.Where(x => x.Name.Contains("owershell"));
         }
     }
 }
