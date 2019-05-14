@@ -7,7 +7,7 @@
                       Width="800"
                       WindowStartupLocation="CenterScreen"
                       ResizeMode="CanResizeWithGrip"
-                      GlowBrush="{DynamicResource AccentColorBrush}" Deactivated="MetroWindow_Deactivated">
+                      GlowBrush="{DynamicResource AccentColorBrush}" Deactivated="MetroWindow_Deactivated" Visibility="Hidden" WindowState="Minimized">
     <Grid>
     
     </Grid>

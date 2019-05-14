@@ -56,6 +56,7 @@ namespace Breaker.Windows
             if (keyId == _hotKey1)
             {
                 Visibility = Visibility == Visibility.Hidden ? Visibility.Visible : Visibility.Hidden;
+                WindowState = WindowState.Normal;
                 if (Visibility == Visibility.Visible)
                 {
                     _eventAggregator.PublishOnUIThread(new ShowHotkeyPressedEvent());

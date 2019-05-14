@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -38,6 +39,8 @@ namespace Breaker.ViewModels
 
         private string _lastCompletedSearchString = string.Empty;
         private UserSettings _settings;
+        private Task _internalSearch;
+        private CancellationTokenSource _cts;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainViewModel"/> class
@@ -145,22 +148,40 @@ namespace Breaker.ViewModels
             }
             if (_lastCompletedSearchString == SearchText)
                 return;
+            if (_cts != null && !_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
+            _cts = new CancellationTokenSource();
+            _internalSearch = Task.Run(() => InternalSearch(_cts.Token));
+        }
 
+        private async Task InternalSearch(CancellationToken cancellationToken)
+        {
             SearchEntry[] foundItems;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < 200)
+            {
+                if(cancellationToken.IsCancellationRequested)
+                    return;
+            }
+            sw.Stop();
             if (SearchText.StartsWith("/"))
             {
                 var (commandText, searchText) = ParseCommandText(SearchText);
                 var commandName = searchText.Substring(1);
-                var slashCommands = SearchEntries.Commands.Where(x => x.Name.StartsWith(commandName)).ToArray();
+                SlashCommand[] slashCommands = SearchEntries.Commands.Where(x => x.Name.StartsWith(commandName)).ToArray();
                 foreach (var items in slashCommands)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
                     items.Display = string.Format(items.DisplayTemplate, commandText);
                 }
 
                 if (slashCommands.Any())
                 {
                     if (slashCommands.Length > 1 || !slashCommands[0].Name.Equals(commandName, StringComparison.CurrentCultureIgnoreCase))
-                        ClearFoundItemsAndHeader();
+                        Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
                     if (slashCommands.Length == 1 && slashCommands[0].RunOnType)
                         await RunSlashCommand(slashCommands[0], false);
                 }
@@ -169,18 +190,24 @@ namespace Breaker.ViewModels
             }
             else
             {
-                ClearFoundItemsAndHeader();
-                foundItems = await _mediator.Send(new GetSearchListingsRequest { SearchText = SearchText }).Expect("Could not retrieve search result");
+                Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
+                foundItems = await _mediator.Send(new GetSearchListingsRequest { SearchText = SearchText }, cancellationToken).Expect("Could not retrieve search result");
             }
-            _lastCompletedSearchString = SearchText;
-            FoundItems.Clear();
-            foreach (var item in foundItems)
-                FoundItems.Add(item);
+            if (cancellationToken.IsCancellationRequested)
+                return;
 
-            if (FoundItems.Any())
+            _lastCompletedSearchString = SearchText;
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                SelectedFoundItem = FoundItems[0];
-            }
+                FoundItems.Clear();
+                foreach (var item in foundItems)
+                    FoundItems.Add(item);
+
+                if (FoundItems.Any())
+                {
+                    SelectedFoundItem = FoundItems[0];
+                }
+            });
         }
 
         private (string commandText, string searchText) ParseCommandText(string searchTextInput)
