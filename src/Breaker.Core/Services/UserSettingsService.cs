@@ -43,7 +43,9 @@ namespace Breaker.Core.Services
             if (!File.Exists(userSettingsFileFullPath))
                 SaveDefaults();
 
-            return ReadSettingsFromFile(userSettingsFileFullPath);
+            var userSettings = ReadSettingsFromFile(userSettingsFileFullPath);
+            userSettings.UserSettingsDirectory = userSettingsFileFullPath;
+            return userSettings;
         }
 
         private static UserSettings ReadSettingsFromFile(string userSettingsFileFullPath)

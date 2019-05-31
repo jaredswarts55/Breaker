@@ -160,7 +160,7 @@ namespace Breaker.ViewModels
         {
             SearchEntry[] foundItems;
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            while (sw.ElapsedMilliseconds < 200)
+            while (sw.ElapsedMilliseconds < 170)
             {
                 if(cancellationToken.IsCancellationRequested)
                     return;

@@ -4,10 +4,12 @@
     {
         public string InstallDirectory { get; set; }
         public string BuildDirectory { get; set; }
+        public string UserSettingsDirectory { get; set; }
         public int Version { get; set; } = 1;
+
         public QuickRunSetting[] QuickRuns = new QuickRunSetting[0];
 
-        public string[] EnabledCommands = new string[0];
+        public string[] DisabledCommands = new string[0];
 
         public static UserSettings Defaults => new UserSettings
                                                {
@@ -34,14 +36,9 @@
                                                                        Arguments = @"C:\opt\Shortcuts.ahk"
                                                                    }
                                                                },
-                                                   EnabledCommands = new[]
+                                                   DisabledCommands = new[]
                                                                      {
-                                                                         "cmd",
-                                                                         "run",
-                                                                         "doc",
-                                                                         "g",
-                                                                         "gl",
-                                                                         "guid"
+                                                                         "doc"
                                                                      }
                                                };
     }
