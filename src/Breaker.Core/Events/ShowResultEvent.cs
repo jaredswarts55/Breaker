@@ -11,5 +11,13 @@ namespace Breaker.Events
         public string Result { get; set; }
         public string Header { get; set; }
         public string Type { get; set; }
+        public JavascriptMessageType MessageType {get;set; }
+    }
+
+    public enum JavascriptMessageType
+    {
+        Information,
+        Warning,
+        Error
     }
 }

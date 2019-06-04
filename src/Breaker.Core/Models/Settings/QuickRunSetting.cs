@@ -12,5 +12,6 @@ namespace Breaker.Core.Models.Settings
         public string Path { get; set; }
         public string WorkingDirectory { get; set; }
         public string Arguments { get; set; }
+        public uint? Priority { get; set; }
     }
 }

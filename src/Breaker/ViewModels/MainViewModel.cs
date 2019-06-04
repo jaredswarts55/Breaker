@@ -76,45 +76,43 @@ namespace Breaker.ViewModels
 
         public async Task<bool> HandleControlKeys(KeyEventArgs context)
         {
-            if (context.Key == Key.Enter)
+            switch (context.Key)
             {
-                if (SelectedFoundItem == null)
+                case Key.Enter when SelectedFoundItem == null:
                     return true;
-                if (SelectedFoundItem is SlashCommand slashCommand)
-                {
+                case Key.Enter when SelectedFoundItem is SlashCommand slashCommand:
                     await RunSlashCommand(slashCommand);
                     return true;
-                }
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
+                case Key.Enter:
+                    var process = new Process
                     {
-                        Arguments = SelectedFoundItem.Arguments,
-                        FileName = SelectedFoundItem.Path,
-                    }
-                };
-                if (!string.IsNullOrWhiteSpace(SelectedFoundItem.WorkingDirectory))
-                    process.StartInfo.WorkingDirectory = SelectedFoundItem.WorkingDirectory;
-                ClearSearchAndHide();
-                process.Start();
-                return true;
+                        StartInfo = new ProcessStartInfo
+                        {
+                            Arguments = SelectedFoundItem.Arguments,
+                            FileName = SelectedFoundItem.Path,
+                        }
+                    };
+                    if (!string.IsNullOrWhiteSpace(SelectedFoundItem.WorkingDirectory))
+                        process.StartInfo.WorkingDirectory = SelectedFoundItem.WorkingDirectory;
+                    ClearSearchAndHide();
+                    process.Start();
+                    return true;
+                case Key.Down:
+                    SelectedFoundItem = FoundItems[Math.Min(FoundItems.Count - 1, Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) + 1)];
+                    return true;
+                case Key.Up:
+                    SelectedFoundItem = FoundItems[Math.Max(0, Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) - 1)];
+                    return true;
+                case Key.Escape:
+                    ClearSearchAndHide();
+                    return true;
+                case Key.PageUp:
+                    var windowManager = new WindowManager();
+                    windowManager.ShowDialog(new ScratchpadViewModel());
+                    return true;
+                default:
+                    return false;
             }
-            else if (context.Key == Key.Down)
-            {
-                SelectedFoundItem = FoundItems[Math.Min(FoundItems.Count - 1, Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) + 1)];
-                return true;
-            }
-            else if (context.Key == Key.Up)
-            {
-                SelectedFoundItem = FoundItems[Math.Max(0, Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) - 1)];
-                return true;
-            }
-            else if (context.Key == Key.Escape)
-            {
-                ClearSearchAndHide();
-                return true;
-            }
-            return false;
         }
 
         private async Task RunSlashCommand(SlashCommand slashCommand, bool closeWindow = true)
@@ -162,7 +160,7 @@ namespace Breaker.ViewModels
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < 170)
             {
-                if(cancellationToken.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                     return;
             }
             sw.Stop();

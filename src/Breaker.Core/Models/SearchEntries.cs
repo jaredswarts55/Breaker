@@ -90,7 +90,7 @@ namespace Breaker.ViewModels.SubModels
                     Arguments = x.Arguments,
                     Name = x.Name,
                     WorkingDirectory = x.WorkingDirectory,
-                    Priority = 1
+                    Priority = x.Priority ?? 1
                 }
             ).ToArray();
             AllEntries = userStartMenuLinks.Union(commonStartMenuLinks)

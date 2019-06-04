@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
+using Breaker.Core.Services;
 using Breaker.Events;
 using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
@@ -32,7 +33,7 @@ namespace Breaker.Core.Listings.Handlers
 
         public Task<Unit> Handle(ExecuteJavascriptRequest request, CancellationToken cancellationToken)
         {
-            var log = new Action<object>(s => _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = s?.ToString(), Header = JavascriptCommandHeader, Type = "js" }));
+            var log = new Action<object>(s => _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = s?.ToString(), Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Information}));
             var guid2Bytes = new Func<object, byte[]>(s =>
             {
                 if (Guid.TryParse(s?.ToString(), out var g))
@@ -55,17 +56,27 @@ namespace Breaker.Core.Listings.Handlers
                 return string.Empty;
             });
 
+            var bytes2Hex = new Func<object, string>(s =>
+            {
+                if (s is object[] numbers)
+                {
+                    return string.Concat(numbers.Select(x => (Convert.ToByte((double)x)).ToString("X2")));
+                }
+                return string.Empty;
+            });
+
             var engine = new Engine()
-                    .SetValue(nameof(log), log)
+                    .SetValue("console", new JavascriptConsole(_eventAggregator))
                     .SetValue(nameof(guid2Bytes), guid2Bytes)
+                    .SetValue(nameof(bytes2Hex), bytes2Hex)
                     .SetValue(nameof(bytes2Guid), bytes2Guid);
             try
             {
-                engine.Execute($"log(JSON.stringify(({request.Javascript})))");
+                engine.Execute($"console.log(JSON.stringify(({request.Javascript})))");
             }
             catch (Exception ex)
             {
-                _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = ex.Message, Header = JavascriptCommandHeader, Type = "js" });
+                _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = ex.Message, Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Error});
             }
             return Unit.Task;
         }

@@ -28,6 +28,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="5.0.3" />
     <PackageReference Include="Caliburn.Metro.Autofac" Version="0.5.0" />
   </ItemGroup>
   <ItemGroup>
@@ -75,5 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="FodyWeavers.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Views\ScratchpadView.xaml.cs">
+      <DependentUpon>ScratchpadView.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

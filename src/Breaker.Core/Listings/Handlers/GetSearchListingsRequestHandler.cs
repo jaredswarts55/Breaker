@@ -52,8 +52,8 @@ namespace Breaker.Core.Listings.Handlers
             });
             if (cancellationToken.IsCancellationRequested)
                 return Task.FromResult(ResultValue(new SearchEntry[0]));
-            var ordered = foundItems.OrderByDescending(x => x.Item.Priority)
-                              .ThenBy(x => x.Distance)
+            var ordered = foundItems
+                              .OrderBy(x => x.Distance - x.Item.Priority)
                               .Select(x => x.Item)
                               .Take(10)
                               .ToArray();
