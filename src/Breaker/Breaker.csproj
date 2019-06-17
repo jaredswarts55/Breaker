@@ -51,6 +51,7 @@
     <PackageReference Include="PropertyChanged.Fody" Version="2.6.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="ReactiveUI.WPF" Version="9.17.4" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows" />

@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,6 +20,7 @@ using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
 using MediatR;
 using NullFight;
+using ReactiveUI;
 
 namespace Breaker.ViewModels
 {
@@ -39,8 +41,6 @@ namespace Breaker.ViewModels
 
         private string _lastCompletedSearchString = string.Empty;
         private UserSettings _settings;
-        private Task _internalSearch;
-        private CancellationTokenSource _cts;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainViewModel"/> class
@@ -52,6 +52,13 @@ namespace Breaker.ViewModels
             _mediator = mediator;
             _eventAggregator.Subscribe(this);
             _settings = userSettingsService.GetUserSettings();
+
+            this.WhenAnyValue(x => x.SearchText)
+                .Throttle(TimeSpan.FromSeconds(0.2), RxApp.TaskpoolScheduler)
+                .Select(query => query?.Trim())
+                .DistinctUntilChanged()
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(x => UpdateSearch());
         }
         public string SearchText { get; set; }
 
@@ -144,26 +151,14 @@ namespace Breaker.ViewModels
                 ClearFoundItemsAndHeader();
                 return;
             }
-            if (_lastCompletedSearchString == SearchText)
-                return;
-            if (_cts != null && !_cts.IsCancellationRequested)
-            {
-                _cts.Cancel();
-            }
-            _cts = new CancellationTokenSource();
-            _internalSearch = Task.Run(() => InternalSearch(_cts.Token));
+#pragma warning disable 4014
+            Task.Run(() => InternalSearch(CancellationToken.None));
+#pragma warning restore 4014
         }
 
         private async Task InternalSearch(CancellationToken cancellationToken)
         {
             SearchEntry[] foundItems;
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            while (sw.ElapsedMilliseconds < 170)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-            }
-            sw.Stop();
             if (SearchText.StartsWith("/"))
             {
                 var (commandText, searchText) = ParseCommandText(SearchText);
