@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
 using Breaker.Core.Utilities;
+using Breaker.Core.Utilities.Win32;
 using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
 using MediatR;
@@ -34,9 +35,9 @@ namespace Breaker.Core.Listings.Handlers
                           };
 
             process.Start();
-            var windowHandle = WindowsUtilities.GetWindowHandleByProcessName("Velocity");
+            var windowHandle = Win32.GetWindowHandleByProcessName("Velocity");
             if(windowHandle.HasValue)
-                WindowsUtilities.RestoreWindow(windowHandle.Value);
+                Win32.RestoreWindow(windowHandle.Value);
             return Unit.Task;
         }
     }

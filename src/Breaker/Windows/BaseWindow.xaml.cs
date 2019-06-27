@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Interop;
 using Breaker.Core.Events;
 using Breaker.Core.Utilities;
+using Breaker.Core.Utilities.Win32;
 using Breaker.Events;
 using Breaker.Invoke;
 using Breaker.ViewModels;
@@ -64,9 +65,10 @@ namespace Breaker.Windows
                 if (Visibility == Visibility.Visible)
                 {
                     _eventAggregator.PublishOnUIThread(new ShowHotkeyPressedEvent());
-                    WindowsUtilities.ShowWindowAsync(_handle, (int)ShowWindowCommands.ShowDefault);
-                    WindowsUtilities.ShowWindowAsync(_handle, (int)ShowWindowCommands.Show);
-                    WindowsUtilities.SetForegroundWindow(_handle);
+                    Win32.SetForegroundWindow(_handle);
+                    //Win32.ShowWindowAsync(_handle, (int)ShowWindowCommands.ShowDefault);
+                    //Win32.ShowWindowAsync(_handle, (int)ShowWindowCommands.Show);
+                    //Win32.SetForegroundWindow(_handle);
                 }
             }
         }
