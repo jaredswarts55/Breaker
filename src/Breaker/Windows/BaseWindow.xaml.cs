@@ -64,6 +64,8 @@ namespace Breaker.Windows
                 if (Visibility == Visibility.Visible)
                 {
                     _eventAggregator.PublishOnUIThread(new ShowHotkeyPressedEvent());
+                    WindowsUtilities.ShowWindowAsync(_handle, (int)ShowWindowCommands.ShowDefault);
+                    WindowsUtilities.ShowWindowAsync(_handle, (int)ShowWindowCommands.Show);
                     WindowsUtilities.SetForegroundWindow(_handle);
                 }
             }
