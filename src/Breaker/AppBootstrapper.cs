@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Interop;
 using Autofac;
 using Breaker.Core.Models;
 using Breaker.Core.Services.Base;
@@ -79,10 +80,13 @@ namespace Breaker
         /// <param name="e">The startup events</param>
         protected override void OnStartup(object sender, StartupEventArgs e)
         {
-            DisplayRootViewFor<IShell>();
+            var windowManager = IoC.Get<IWindowManager>() as AppWindowManager;
+            var handle = windowManager?.EnsureWindowHandle(IoC.Get<IShell>(), null);
+            //var windowManager = IoC.Get<IWindowManager>();
+            //DisplayRootViewFor<IShell>();
             var userSettingsService = Container.Resolve<IUserSettingsService>();
             SearchEntries.InitializeSearch(GetShortcutTarget, userSettingsService);
-            
+
         }
         public static (string path, string arguments) GetShortcutTarget(string lnkPath)
         {
@@ -101,6 +105,6 @@ namespace Breaker
             var arguments = linkObject?.Arguments;
             return (targetPath, arguments);
         }
-       
+
     }
 }

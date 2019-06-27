@@ -3,8 +3,10 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using Breaker.Core.Events;
+using Breaker.Core.Utilities;
 using Breaker.Events;
 using Breaker.Invoke;
+using Breaker.ViewModels;
 using Caliburn.Micro;
 
 namespace Breaker.Windows
@@ -15,6 +17,7 @@ namespace Breaker.Windows
     public partial class BaseWindow : IHandle<ToggleWindowVisibilityEvent>
     {
         private readonly IEventAggregator _eventAggregator;
+        private static Window _created = null;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="BaseWindow" /> class
@@ -24,7 +27,7 @@ namespace Breaker.Windows
             _eventAggregator = eventAggregator;
             InitializeComponent();
             _eventAggregator.Subscribe(this);
-            Topmost = true;
+            _handle = new WindowInteropHelper(this).Handle;
         }
 
         /// <summary>
@@ -33,6 +36,7 @@ namespace Breaker.Windows
         uint _hotKey1;
 
         private HotKeyHelper _hotKeys;
+        private IntPtr _handle;
 
         // --------------------------------------------------------------------------
         /// <summary>
@@ -43,7 +47,7 @@ namespace Breaker.Windows
         {
             base.OnSourceInitialized(e);
             _hotKeys = new HotKeyHelper(this, HandleHotKey);
-            _hotKey1 = _hotKeys.ListenForHotKey(System.Windows.Forms.Keys.Space, HotKeyModifiers.Shift| HotKeyModifiers.Control);
+            _hotKey1 = _hotKeys.ListenForHotKey(System.Windows.Forms.Keys.Space, HotKeyModifiers.Shift | HotKeyModifiers.Control);
         }
 
         // --------------------------------------------------------------------------
@@ -60,7 +64,7 @@ namespace Breaker.Windows
                 if (Visibility == Visibility.Visible)
                 {
                     _eventAggregator.PublishOnUIThread(new ShowHotkeyPressedEvent());
-                    Topmost = true;
+                    WindowsUtilities.SetForegroundWindow(_handle);
                 }
             }
         }

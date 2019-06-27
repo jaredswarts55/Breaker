@@ -13,6 +13,10 @@ namespace Breaker.Core.Utilities
     public class WindowsUtilities
     {
         [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
         private static extern int ShowWindow(IntPtr hWnd, uint msg);
         private const uint RestoreWindowMessage = 0x09;
 

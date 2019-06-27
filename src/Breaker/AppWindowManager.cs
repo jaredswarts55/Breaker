@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Windows.Controls;
+using System.Windows.Interop;
+using System.Windows.Navigation;
 using Autofac;
 
 namespace Breaker
@@ -11,6 +16,22 @@ namespace Breaker
     /// </summary>
     public class AppWindowManager : WindowManager
     {
+        public IntPtr EnsureWindowHandle(object rootModel, object view)
+        {
+            NavigationWindow navigationWindow = null;
+            var current = Application.Current;
+            if (current?.MainWindow != null)
+                navigationWindow = current.MainWindow as NavigationWindow;
+            if (navigationWindow != null)
+            {
+                var page = CreatePage(rootModel, view, null);
+                navigationWindow.Navigate(page);
+                return new WindowInteropHelper(navigationWindow).EnsureHandle();
+            }
+
+            var window = CreateWindow(rootModel, false, view, new Dictionary<string, object>());
+            return new WindowInteropHelper(window).EnsureHandle();
+        }
         /// <summary>
         /// Selects a base window depending on the view, model and dialog options
         /// </summary>

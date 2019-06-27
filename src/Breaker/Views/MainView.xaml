@@ -8,12 +8,6 @@
              d:DesignHeight="300"
              d:DesignWidth="300">
     <UserControl.Resources>
-        <Style x:Key="myLBStyle" TargetType="{x:Type ListBoxItem}">
-            <Style.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
-                                 Color="Transparent"/>
-            </Style.Resources>
-        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -29,8 +23,8 @@
         <TextBox Grid.Row="1" HorizontalContentAlignment="Stretch" x:Name="SearchText" cal:Message.Attach="[Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)];">
         </TextBox>
         <ListBox Grid.Row="2" SelectedItem="{Binding SelectedFoundItem}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" ItemsSource="{Binding FoundItems}"
-                 cal:Message.Attach="[Event SelectionChanged] = [Action SelectionChanged($eventArgs)]; [Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)]"
-                 ItemContainerStyle="{StaticResource myLBStyle}">
+                 cal:Message.Attach="[Event SelectionChanged] = [Action SelectionChanged($eventArgs)]; [Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)]">
+
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel cal:Message.Attach="[Event MouseRightButtonDown] = [Action CopyItem($dataContext)]">
