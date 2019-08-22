@@ -54,7 +54,7 @@ namespace Breaker.ViewModels
             _settings = userSettingsService.GetUserSettings();
 
             this.WhenAnyValue(x => x.SearchText)
-                .Throttle(TimeSpan.FromSeconds(0.2), RxApp.TaskpoolScheduler)
+                .Throttle(TimeSpan.FromSeconds(0.10), RxApp.TaskpoolScheduler)
                 .Select(query => query?.Trim())
                 .DistinctUntilChanged()
                 .ObserveOn(RxApp.MainThreadScheduler)
@@ -183,7 +183,7 @@ namespace Breaker.ViewModels
             }
             else
             {
-                Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
+                //Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
                 foundItems = await _mediator.Send(new GetSearchListingsRequest { SearchText = SearchText }, cancellationToken).Expect("Could not retrieve search result");
             }
             if (cancellationToken.IsCancellationRequested)
@@ -192,11 +192,9 @@ namespace Breaker.ViewModels
             _lastCompletedSearchString = SearchText;
             Application.Current.Dispatcher.Invoke(() =>
             {
-                FoundItems.Clear();
-                foreach (var item in foundItems)
-                    FoundItems.Add(item);
+                FoundItems = new ObservableCollection<SearchEntry>(foundItems);
 
-                if (FoundItems.Any())
+                if (foundItems.Length > 0)
                 {
                     SelectedFoundItem = FoundItems[0];
                 }
