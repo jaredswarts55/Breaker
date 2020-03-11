@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -27,7 +28,29 @@ namespace Breaker.Core.Listings.Handlers
         private static object _padlock = new object();
         public Task<Result<SearchEntry[]>> Handle(GetSearchListingsRequest request, CancellationToken cancellationToken)
         {
-            var s = request.SearchText?.ToLower();
+            var stopwatch = Stopwatch.StartNew();
+            var searchTerms = request.SearchText?.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToArray() ?? new string[0];
+            var foundItems = new List<SearchEntry>();
+            foreach (var s in searchTerms)
+            {
+                if (SearchEntries.IndexedLookupTable.TryGetValue(s, out var results))
+                {
+                    foreach (var result in results)
+                        foundItems.Add(result);
+                }
+                for (var i = 0; i < s.Length - 1; i++)
+                {
+                    var key = s.Remove(i, 1);
+                    if (SearchEntries.IndexedLookupTable.TryGetValue(key, out var partialTermResults))
+                    {
+                        foreach (var result in partialTermResults)
+                            foundItems.Add(result);
+                    }
+                }
+            }
+            var toReturn = Task.FromResult(ResultValue(foundItems.GroupBy(x => x.Name).OrderByDescending(x => x.First().Priority).ThenBy(x => x.Count()).Select(x => x.First()).Take(10).ToArray()));
+            stopwatch.Stop();
+            return toReturn;
             //SearchEntry[] foundItems = SearchEntries.AllEntries.AsParallel()
             //                          .Select(x => new SearchEntryMatch {Item = x, Distance = x.Terms.Min(y => FindSmallestDistanceInText(y, s))})
             //                          .Where(x => s != null && x.Distance < (int)(s.Length * .85 + .5))
@@ -36,28 +59,28 @@ namespace Breaker.Core.Listings.Handlers
             //                          .Select(x => x.Item)
             //                          .Take(10)
             //                          .ToArray();
-            var foundItems = new ConcurrentBag<SearchEntryMatch>();
             //var foundItems = new List<SearchEntryMatch>();
-            Parallel.ForEach(SearchEntries.AllEntries.Where(x => x != null), x =>
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-                var smallestMatch = new SearchEntryMatch { Item = x, Distance = x.Terms.Min(y => FindSmallestDistanceInText(y, s, cancellationToken)) };
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-                if (s != null && smallestMatch?.Distance < (int)(s.Length * .85 + .5))
-                {
-                    foundItems.Add(smallestMatch);
-                }
-            });
-            if (cancellationToken.IsCancellationRequested)
-                return Task.FromResult(ResultValue(new SearchEntry[0]));
-            var ordered = foundItems
-                              .OrderBy(x => x.Distance - x.Item.Priority)
-                              .Select(x => x.Item)
-                              .Take(10)
-                              .ToArray();
-            return Task.FromResult(ResultValue(ordered));
+
+            //Parallel.ForEach(SearchEntries.AllEntries.Where(x => x != null), x =>
+            //{
+            //    if (cancellationToken.IsCancellationRequested)
+            //        return;
+            //    var smallestMatch = new SearchEntryMatch { Item = x, Distance = x.Terms.Min(y => FindSmallestDistanceInText(y, s, cancellationToken)) };
+            //    if (cancellationToken.IsCancellationRequested)
+            //        return;
+            //    if (s != null && smallestMatch?.Distance < (int)(s.Length * .85 + .5))
+            //    {
+            //        foundItems.Add(smallestMatch);
+            //    }
+            //});
+            //if (cancellationToken.IsCancellationRequested)
+            //    return Task.FromResult(ResultValue(new SearchEntry[0]));
+            //var ordered = foundItems
+            //                  .OrderBy(x => x.Distance - x.Item.Priority)
+            //                  .Select(x => x.Item)
+            //                  .Take(10)
+            //                  .ToArray();
+            //return Task.FromResult(ResultValue(ordered));
         }
 
         private int FindSmallestDistanceInText(string inputText, string search, CancellationToken cancellationToken)

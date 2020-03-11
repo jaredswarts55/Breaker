@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Breaker.Core.Commands.Requests;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
@@ -12,6 +14,7 @@ namespace Breaker.ViewModels.SubModels
     public class SearchEntries
     {
         public static SearchEntry[] AllEntries = new SearchEntry[0];
+        public static Dictionary<string, List<SearchEntry>> IndexedLookupTable = new Dictionary<string, List<SearchEntry>>();
 
         public static SlashCommand[] Commands =
         {
@@ -119,6 +122,42 @@ namespace Breaker.ViewModels.SubModels
                                                    Terms = new[] { x.fileName, x.executableName }
                                                }
                                            ).Union(AllEntries).ToArray();
+
+            foreach (var entry in AllEntries)
+            {
+                var terms = entry.Name
+                                 .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                 .Concat(entry.Terms)
+                                 .Select(x => x.Trim().ToLower())
+                                 .Distinct()
+                                 .Where(x => !string.IsNullOrWhiteSpace(x));
+                foreach (var term in terms)
+                {
+                    if (IndexedLookupTable.TryGetValue(term, out var listForFullTerm))
+                        listForFullTerm.Add(entry);
+                    else
+                        IndexedLookupTable[term] = new List<SearchEntry> { entry };
+
+                    for (var i = 0; i < term.Length; i++)
+                    {
+                        var key = term.Remove(i, 1);
+                        if (IndexedLookupTable.TryGetValue(key, out var list))
+                            list.Add(entry);
+                        else
+                            IndexedLookupTable[key] = new List<SearchEntry> { entry };
+
+                        if (i > 0)
+                        {
+                            var substringKey = term.Substring(0, i);
+                            if (IndexedLookupTable.TryGetValue(substringKey, out var substringList))
+                                substringList.Add(entry);
+                            else
+                                IndexedLookupTable[substringKey] = new List<SearchEntry> { entry };
+                        }
+                    }
+                }
+            }
         }
+
     }
 }
