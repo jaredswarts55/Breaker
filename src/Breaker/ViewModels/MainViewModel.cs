@@ -54,7 +54,7 @@ namespace Breaker.ViewModels
             _settings = userSettingsService.GetUserSettings();
 
             this.WhenAnyValue(x => x.SearchText)
-                .Throttle(TimeSpan.FromSeconds(0.2), RxApp.TaskpoolScheduler)
+                .Throttle(TimeSpan.FromSeconds(0.05), RxApp.TaskpoolScheduler)
                 .Select(query => query?.Trim())
                 .DistinctUntilChanged()
                 .ObserveOn(RxApp.MainThreadScheduler)

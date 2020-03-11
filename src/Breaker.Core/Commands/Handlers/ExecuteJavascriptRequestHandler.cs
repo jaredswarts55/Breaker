@@ -33,7 +33,7 @@ namespace Breaker.Core.Listings.Handlers
 
         public Task<Unit> Handle(ExecuteJavascriptRequest request, CancellationToken cancellationToken)
         {
-            var log = new Action<object>(s => _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = s?.ToString(), Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Information}));
+            var log = new Action<object>(s => _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = s?.ToString(), Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Information }));
             var guid2Bytes = new Func<object, byte[]>(s =>
             {
                 if (Guid.TryParse(s?.ToString(), out var g))
@@ -65,20 +65,46 @@ namespace Breaker.Core.Listings.Handlers
                 return string.Empty;
             });
 
+            var hex2Bytes = new Func<string, object>(hex =>
+            {
+                if (hex.Length % 2 == 1)
+                    throw new Exception("The binary key cannot have an odd number of digits");
+
+                byte[] arr = new byte[hex.Length >> 1];
+
+                for (int i = 0; i < hex.Length >> 1; ++i)
+                {
+                    arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + (GetHexVal(hex[(i << 1) + 1])));
+                }
+
+                return arr;
+            });
+
             var engine = new Engine()
                     .SetValue("console", new JavascriptConsole(_eventAggregator))
                     .SetValue(nameof(guid2Bytes), guid2Bytes)
                     .SetValue(nameof(bytes2Hex), bytes2Hex)
-                    .SetValue(nameof(bytes2Guid), bytes2Guid);
+                    .SetValue(nameof(bytes2Guid), bytes2Guid)
+                    .SetValue(nameof(hex2Bytes), hex2Bytes);
             try
             {
                 engine.Execute($"console.log(JSON.stringify(({request.Javascript})))");
             }
             catch (Exception ex)
             {
-                _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = ex.Message, Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Error});
+                _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = ex.Message, Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Error });
             }
             return Unit.Task;
+        }
+        public static int GetHexVal(char hex)
+        {
+            int val = (int)hex;
+            //For uppercase A-F letters:
+            return val - (val < 58 ? 48 : 55);
+            //For lowercase a-f letters:
+            //return val - (val < 58 ? 48 : 87);
+            //Or the two combined, but a bit slower:
+            //return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
         }
     }
 }
