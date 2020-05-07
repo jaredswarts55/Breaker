@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,29 +16,29 @@ using Breaker.Core.Events;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
 using Breaker.Core.Models.Settings;
-using Breaker.Core.Services;
 using Breaker.Core.Services.Base;
 using Breaker.Events;
 using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
+using Caliburn.Micro;
 using MediatR;
 using NullFight;
 using ReactiveUI;
 
 namespace Breaker.ViewModels
 {
-    using Caliburn.Micro;
-    using PropertyChanged;
-
     /// <summary>
-    /// Main view model for the application
+    ///     Main view model for the application
     /// </summary>
-    public class MainViewModel : ViewAware, IHandle<ShowHotkeyPressedEvent>, IHandle<ShowResultEvent>, IHandle<ClearSearchEvent>
+    public class MainViewModel : ViewAware, IHandle<ShowHotkeyPressedEvent>, IHandle<ShowResultEvent>,
+                                 IHandle<ClearSearchEvent>
     {
         /// <summary>
-        /// Stores the events aggregator
+        ///     Stores the events aggregator
         /// </summary>
         private readonly IEventAggregator _eventAggregator;
+
+        private readonly ConcurrentQueue<SearchQuery> searchQueue = new ConcurrentQueue<SearchQuery>();
 
         private readonly IMediator _mediator;
 
@@ -43,10 +46,14 @@ namespace Breaker.ViewModels
         private UserSettings _settings;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MainViewModel"/> class
+        ///     Initializes a new instance of the <see cref="MainViewModel" /> class
         /// </summary>
         /// <param name="eventAggregator">The events</param>
-        public MainViewModel(IEventAggregator eventAggregator, IMediator mediator, IUserSettingsService userSettingsService)
+        public MainViewModel(
+            IEventAggregator eventAggregator,
+            IMediator mediator,
+            IUserSettingsService userSettingsService
+        )
         {
             _eventAggregator = eventAggregator;
             _mediator = mediator;
@@ -54,15 +61,27 @@ namespace Breaker.ViewModels
             _settings = userSettingsService.GetUserSettings();
 
             this.WhenAnyValue(x => x.SearchText)
-                .Throttle(TimeSpan.FromSeconds(0.05), RxApp.TaskpoolScheduler)
+                .Throttle(TimeSpan.FromSeconds(0.10), RxApp.TaskpoolScheduler)
                 .Select(query => query?.Trim())
                 .DistinctUntilChanged()
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(x => UpdateSearch());
-        }
-        public string SearchText { get; set; }
 
-        public string Header { get; set; } = "Search";
+
+            Header = $"Search - {Version}";
+            using (var sha = SHA256.Create())
+            {
+                var buffer =
+                    Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().GetName()?.Version?.ToString() ?? "");
+                Version = sha.ComputeHash(buffer).Select(x => x.ToString("x2")).Take(3)
+                             .Aggregate(string.Empty, (c, c1) => c + c1);
+            }
+        }
+
+        public string SearchText { get; set; }
+        public string Version { get; set; }
+
+        public string Header { get; set; }
         public ObservableCollection<SearchEntry> FoundItems { get; set; } = new ObservableCollection<SearchEntry>();
         public SearchEntry[] AllItems { get; set; } = SearchEntries.AllEntries;
         public SearchEntry SelectedFoundItem { get; set; }
@@ -76,9 +95,7 @@ namespace Breaker.ViewModels
         public async void SelectionChanged(SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count >= 1)
-            {
                 SelectedFoundItem = e.AddedItems[0] as SearchEntry;
-            }
         }
 
         public async Task<bool> HandleControlKeys(KeyEventArgs context)
@@ -96,7 +113,7 @@ namespace Breaker.ViewModels
                         StartInfo = new ProcessStartInfo
                         {
                             Arguments = SelectedFoundItem.Arguments,
-                            FileName = SelectedFoundItem.Path,
+                            FileName = SelectedFoundItem.Path
                         }
                     };
                     if (!string.IsNullOrWhiteSpace(SelectedFoundItem.WorkingDirectory))
@@ -105,10 +122,16 @@ namespace Breaker.ViewModels
                     process.Start();
                     return true;
                 case Key.Down:
-                    SelectedFoundItem = FoundItems[Math.Min(FoundItems.Count - 1, Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) + 1)];
+                    SelectedFoundItem = FoundItems[Math.Min(
+                        FoundItems.Count - 1,
+                        Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) + 1
+                    )];
                     return true;
                 case Key.Up:
-                    SelectedFoundItem = FoundItems[Math.Max(0, Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) - 1)];
+                    SelectedFoundItem = FoundItems[Math.Max(
+                        0,
+                        Array.IndexOf(FoundItems.ToArray(), SelectedFoundItem) - 1
+                    )];
                     return true;
                 case Key.Escape:
                     ClearSearchAndHide();
@@ -127,8 +150,9 @@ namespace Breaker.ViewModels
             var (commandText, _) = ParseCommandText(SearchText);
             if (closeWindow)
                 ClearSearchAndHide();
-            await _mediator.Send(slashCommand.CreateRequest(commandText, _settings));
+            await _mediator.Send(slashCommand.CreateRequest(slashCommand.SubstituteCommandText ?? commandText, _settings));
         }
+
         public async void CopyItem(SearchEntry eventArgs)
         {
             if (eventArgs is SlashCommand slashCommand)
@@ -139,9 +163,7 @@ namespace Breaker.ViewModels
                 Clipboard.SetText(toClipboard);
             }
             else
-            {
                 Clipboard.SetText(eventArgs.Path);
-            }
         }
 
         public async void UpdateSearch()
@@ -152,7 +174,7 @@ namespace Breaker.ViewModels
                 return;
             }
 #pragma warning disable 4014
-            Task.Run(() => InternalSearch(CancellationToken.None));
+            new System.Threading.Thread(sender => Task.Run(() => InternalSearch(CancellationToken.None))).Start(null);
 #pragma warning restore 4014
         }
 
@@ -161,44 +183,63 @@ namespace Breaker.ViewModels
             SearchEntry[] foundItems;
             if (SearchText.StartsWith("/"))
             {
-                var (commandText, searchText) = ParseCommandText(SearchText);
-                var commandName = searchText.Substring(1);
-                SlashCommand[] slashCommands = SearchEntries.Commands.Where(x => x.Name.StartsWith(commandName)).ToArray();
+                var (commandArguments, commandNameRaw) = ParseCommandText(SearchText);
+                var commandName = commandNameRaw.Substring(1);
+                var slashCommands = SearchEntries.Commands.Where(x => x.Name.StartsWith(commandName)).ToArray();
                 foreach (var items in slashCommands)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    items.Display = string.Format(items.DisplayTemplate, commandText);
-                }
-
-                if (slashCommands.Any())
-                {
-                    if (slashCommands.Length > 1 || !slashCommands[0].Name.Equals(commandName, StringComparison.CurrentCultureIgnoreCase))
-                        Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
-                    if (slashCommands.Length == 1 && slashCommands[0].RunOnType)
-                        await RunSlashCommand(slashCommands[0], false);
+                    items.Display = string.Format(items.DisplayTemplate, commandArguments);
                 }
 
                 foundItems = slashCommands;
+                if (slashCommands.Any())
+                {
+                    if (slashCommands.Length > 1 ||
+                        !slashCommands[0].Name.Equals(commandName, StringComparison.CurrentCultureIgnoreCase))
+                        Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
+                    if (slashCommands.Length == 1 && slashCommands[0].RunOnType)
+                        await RunSlashCommand(slashCommands[0], false);
+                    else if (slashCommands.Length == 1)
+                    {
+                        var slashCommand = slashCommands[0];
+
+                        if (slashCommand.SupportsAutocomplete && !string.IsNullOrWhiteSpace(commandArguments))
+                        {
+                            var autoComplete = (await slashCommand.AutoComplete(commandArguments.Trim(), slashCommand))
+                                               .Select(
+                                                   x => slashCommand.CloneForSearchEntry(
+                                                       string.Format(slashCommand.AutoCompleteTemplate, x.Trim()),
+                                                       x.Trim()
+                                                   )
+                                               ).ToArray();
+                            foundItems = autoComplete;
+                        }
+                    }
+                }
             }
             else
             {
                 //Application.Current.Dispatcher.Invoke(ClearFoundItemsAndHeader);
-                foundItems = await _mediator.Send(new GetSearchListingsRequest { SearchText = SearchText }, cancellationToken).Expect("Could not retrieve search result");
+                foundItems = await _mediator
+                                   .Send(new GetSearchListingsRequest { SearchText = SearchText }, cancellationToken)
+                                   .Expect("Could not retrieve search result");
             }
+
             if (cancellationToken.IsCancellationRequested)
                 return;
 
             _lastCompletedSearchString = SearchText;
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                FoundItems = new ObservableCollection<SearchEntry>(foundItems);
-
-                if (foundItems.Length > 0)
+            Application.Current.Dispatcher.Invoke(
+                () =>
                 {
-                    SelectedFoundItem = FoundItems[0];
+                    FoundItems = new ObservableCollection<SearchEntry>(foundItems);
+
+                    if (foundItems.Length > 0)
+                        SelectedFoundItem = FoundItems[0];
                 }
-            });
+            );
         }
 
         private (string commandText, string searchText) ParseCommandText(string searchTextInput)
@@ -231,7 +272,7 @@ namespace Breaker.ViewModels
         {
             SelectedFoundItem = null;
             FoundItems.Clear();
-            Header = "Search";
+            Header = $"Search - {Version}";
         }
 
         public void Handle(ShowHotkeyPressedEvent message)
@@ -241,11 +282,14 @@ namespace Breaker.ViewModels
 
         public void Handle(ShowResultEvent message)
         {
-            Header = message.Header;
-            if (SelectedFoundItem != null && !string.IsNullOrWhiteSpace(message.Result) && SelectedFoundItem is SlashCommand slashCommand)
+            Header = $"{message.Header} - {Version}";
+            if (SelectedFoundItem != null &&
+                !string.IsNullOrWhiteSpace(message.Result) &&
+                SelectedFoundItem is SlashCommand slashCommand)
             {
                 var (commandText, _) = ParseCommandText(SearchText);
-                SelectedFoundItem.Display = string.Format(slashCommand.DisplayTemplate, commandText) + " = " + message.Result;
+                SelectedFoundItem.Display =
+                    string.Format(slashCommand.DisplayTemplate, commandText) + " = " + message.Result;
                 slashCommand.CurrentResult = message.Result;
             }
         }

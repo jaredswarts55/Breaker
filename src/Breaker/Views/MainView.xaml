@@ -18,18 +18,18 @@
             <RowDefinition Height="30" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock Margin="4 4 0 0" Grid.Row="0" FontWeight="Bold" x:Name="Header"></TextBlock>
+        <TextBlock Margin="4 4 0 0" Grid.Row="0" FontWeight="Bold" Text="{Binding Path=Header, Mode=OneWay}"></TextBlock>
         <!--<TextBox Grid.Row="1" HorizontalContentAlignment="Stretch" x:Name="SearchText" >-->
         <TextBox Grid.Row="1" HorizontalContentAlignment="Stretch" x:Name="SearchText" cal:Message.Attach="[Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)];">
         </TextBox>
-        <ListBox Grid.Row="2" SelectedItem="{Binding SelectedFoundItem}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" ItemsSource="{Binding FoundItems}"
+        <ListBox Grid.Row="2" SelectedItem="{Binding SelectedFoundItem}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" ItemsSource="{Binding Path=FoundItems, Mode=OneWay}"
                  cal:Message.Attach="[Event SelectionChanged] = [Action SelectionChanged($eventArgs)]; [Event PreviewKeyDown] = [Action HandleControlKeys($eventArgs)]">
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel cal:Message.Attach="[Event MouseRightButtonDown] = [Action CopyItem($dataContext)]">
-                        <TextBlock Text="{Binding Name}" FontWeight="Bold" />
-                        <TextBlock Margin="12 0 0 0" Text="{Binding Display}" FontSize="10" />
+                        <TextBlock Text="{Binding Path=Name, Mode=OneWay}" FontWeight="Bold" />
+                        <TextBlock Margin="12 0 0 0" Text="{Binding Path=Display, Mode=OneWay}" FontSize="10" />
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

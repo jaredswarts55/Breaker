@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
+using System.Threading.Tasks;
 using Breaker.Core.Commands.Requests;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
 using Breaker.Core.Models.Settings;
 using Breaker.Core.Services.Base;
+using Jint.Parser.Ast;
 
 namespace Breaker.ViewModels.SubModels
 {
@@ -40,8 +45,12 @@ namespace Breaker.ViewModels.SubModels
             {
                 Name = "kill",
                 DisplayTemplate = "Kill Process '{0}'",
-                CreateRequest = (s, userSettings) => new ExecuteRunCommandRequest {CommandText = $"taskkill /f /im {s}", Hide = true}
-            },
+                CreateRequest = (s, userSettings) => new ExecuteRunCommandRequest {CommandText = $"taskkill /f /im {s}", Hide = true},
+                AutoComplete = async (s, command) => {
+                    var processes = await command.GetOrCreateCache("processes", () => Task.FromResult(Process.GetProcesses().Select(x => $"{x.ProcessName}.exe").GroupBy(x => x).Select(x => x.First())), 5);
+                    return processes.Where(x => x.ToLower().Contains(s.ToLower())).ToArray();
+                }
+},
             new SlashCommand
             {
                 Name = "doc",

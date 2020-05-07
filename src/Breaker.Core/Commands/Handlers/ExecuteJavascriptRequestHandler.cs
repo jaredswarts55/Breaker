@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -40,6 +41,8 @@ namespace Breaker.Core.Listings.Handlers
                     return g.ToByteArray();
                 return new byte[0];
             });
+
+
             var bytes2Guid = new Func<object, string>(s =>
             {
                 if (s is object[] numbers)
@@ -50,7 +53,7 @@ namespace Breaker.Core.Listings.Handlers
                     }
                     catch (Exception ex)
                     {
-                        return string.Empty;
+                        return ex.Message;
                     }
                 }
                 return string.Empty;
@@ -60,7 +63,7 @@ namespace Breaker.Core.Listings.Handlers
             {
                 if (s is object[] numbers)
                 {
-                    return string.Concat(numbers.Select(x => (Convert.ToByte((double)x)).ToString("X2")));
+                    return "0x" + string.Concat(numbers.Select(x => (Convert.ToByte((double)x)).ToString("x2")));
                 }
                 return string.Empty;
             });
@@ -70,19 +73,33 @@ namespace Breaker.Core.Listings.Handlers
                 if (hex.Length % 2 == 1)
                     throw new Exception("The binary key cannot have an odd number of digits");
 
-                byte[] arr = new byte[hex.Length >> 1];
+                hex = Regex.Replace(hex, "^0x", string.Empty);
+                return StringToByteArray(hex);
+                //byte[] arr = new byte[hex.Length >> 1];
 
-                for (int i = 0; i < hex.Length >> 1; ++i)
-                {
-                    arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + (GetHexVal(hex[(i << 1) + 1])));
-                }
+                //for (int i = 0; i < hex.Length >> 1; ++i)
+                //{
+                //    arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + (GetHexVal(hex[(i << 1) + 1])));
+                //}
 
-                return arr;
+                //return arr;
             });
+            var hex2Guid = new Func<string, string>(hex =>
+            {
+                if (hex.Length % 2 == 1)
+                    throw new Exception("The binary key cannot have an odd number of digits");
 
+                return new Guid((byte[])hex2Bytes(hex)).ToString();
+            });
+            var guid2Hex = new Func<string, string>(guidString =>
+            {
+                return "0x" + string.Concat(new Guid(guidString).ToByteArray().Select(x => (Convert.ToByte((double)x)).ToString("x2")));
+            });
             var engine = new Engine()
                     .SetValue("console", new JavascriptConsole(_eventAggregator))
                     .SetValue(nameof(guid2Bytes), guid2Bytes)
+                    .SetValue(nameof(hex2Guid), hex2Guid)
+                    .SetValue(nameof(guid2Hex), guid2Hex)
                     .SetValue(nameof(bytes2Hex), bytes2Hex)
                     .SetValue(nameof(bytes2Guid), bytes2Guid)
                     .SetValue(nameof(hex2Bytes), hex2Bytes);
@@ -95,6 +112,14 @@ namespace Breaker.Core.Listings.Handlers
                 _eventAggregator.PublishOnUIThread(new ShowResultEvent { Result = ex.Message, Header = JavascriptCommandHeader, Type = "js", MessageType = JavascriptMessageType.Error });
             }
             return Unit.Task;
+        }
+        public static byte[] StringToByteArray(String hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
         }
         public static int GetHexVal(char hex)
         {

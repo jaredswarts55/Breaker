@@ -98,12 +98,13 @@ namespace Breaker
             try
             {
                 linkObject = (ShellLinkObject)itm.GetLink;
+                var targetPath = linkObject?.Target?.Path;
+                var arguments = linkObject?.Arguments;
+                return (targetPath, arguments);
             }
             // A very small number of these fail with access rights issues. I think they are created by system? Admins don't have rights
             catch (Exception) { }
-            var targetPath = linkObject?.Target?.Path;
-            var arguments = linkObject?.Arguments;
-            return (targetPath, arguments);
+            return (null,null);
         }
 
     }
