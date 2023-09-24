@@ -22,16 +22,16 @@ namespace Breaker.Core.Listings.Handlers
 {
     public class ExecuteCopyGuidRequestHandler : IRequestHandler<ExecuteCopyGuidRequest, Unit>
     {
-        private readonly IClipboardHandler _clipboardHandler;
+        private readonly IClipboardService _clipboardService;
 
-        public ExecuteCopyGuidRequestHandler(IClipboardHandler clipboardHandler)
+        public ExecuteCopyGuidRequestHandler(IClipboardService clipboardService)
         {
-            _clipboardHandler = clipboardHandler;
+            _clipboardService = clipboardService;
         }
 
         public Task<Unit> Handle(ExecuteCopyGuidRequest request, CancellationToken cancellationToken)
         {
-            _clipboardHandler.SetText(Guid.NewGuid().ToString());
+            _clipboardService.SetText(Guid.NewGuid().ToString());
             return Unit.Task;
         }
     }

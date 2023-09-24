@@ -5,5 +5,6 @@ namespace Breaker.Core.Events
     public interface IEventAggregator
     {
         public void PublishOnUIThread(object obj);
+        void Subscribe(object mainWindowViewModel);
     }
 }
