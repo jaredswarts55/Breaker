@@ -17,7 +17,7 @@ using static NullFight.FunctionalExtensions;
 
 namespace Breaker.Core.Listings.Handlers
 {
-    public class ExecuteGoogleSearchRequestHandler : IRequestHandler<ExecuteGoogleSearchRequest>
+    public class ExecuteGoogleSearchRequestHandler : IRequestHandler<ExecuteGoogleSearchRequest, Unit>
     {
         public Task<Unit> Handle(ExecuteGoogleSearchRequest request, CancellationToken cancellationToken)
         {

@@ -5,7 +5,6 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Breaker.Core.Annotations;
-using PropertyChanged;
 
 namespace Breaker.Core.Models
 {

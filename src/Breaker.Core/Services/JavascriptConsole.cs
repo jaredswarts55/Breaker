@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web.Configuration;
+using Breaker.Core.Events;
 using Breaker.Events;
-using Caliburn.Micro;
 using Newtonsoft.Json;
 
 namespace Breaker.Core.Services

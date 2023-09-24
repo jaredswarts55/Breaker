@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Breaker.Core.Commands.Requests
 {
-    public class ExecuteCopyGuidRequest : IRequest
+    public class ExecuteCopyGuidRequest : IRequest<Unit>
     {
     }
 }

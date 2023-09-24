@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Breaker.Core.Listings.Requests
 {
-    public class ExecuteSearchDocsRequest : IRequest
+    public class ExecuteSearchDocsRequest : IRequest<Unit>
     {
         public string CommandText { get; set; }
         public bool Hide { get; set; }

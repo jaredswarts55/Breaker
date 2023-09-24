@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Breaker.Core.Listings.Requests
 {
-    public class ExecuteJavascriptRequest : IRequest
+    public class ExecuteJavascriptRequest : IRequest<Unit>
     {
         public string Javascript { get; set; }
     }

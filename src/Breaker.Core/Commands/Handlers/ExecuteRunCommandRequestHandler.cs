@@ -16,7 +16,7 @@ using static NullFight.FunctionalExtensions;
 
 namespace Breaker.Core.Listings.Handlers
 {
-    public class ExecuteRunCommandRequestHandler : IRequestHandler<ExecuteRunCommandRequest>
+    public class ExecuteRunCommandRequestHandler : IRequestHandler<ExecuteRunCommandRequest, Unit>
     {
         public Task<Unit> Handle(ExecuteRunCommandRequest request, CancellationToken cancellationToken)
         {

@@ -1,10 +1,8 @@
-using System;
 using Breaker.Core.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Breaker.Tests
 {
-    [TestClass]
     public class UserSettingsServiceTests
     {
         private UserSettingsService _userSettings;
@@ -14,8 +12,8 @@ namespace Breaker.Tests
             _userSettings = new UserSettingsService();
         }
 
-        [TestMethod]
-        public void TestMethod1()
+        [Fact]
+        public void GetUserSettings_RetrievesOrCreatesSettings()
         {
             var folder = _userSettings.GetUserSettings();
         }

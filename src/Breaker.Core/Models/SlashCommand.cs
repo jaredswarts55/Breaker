@@ -22,7 +22,7 @@ namespace Breaker.Core.Models
 
         public string SubstituteCommandText { get; set; }
         public string DisplayTemplate { get; set; }
-        public Func<string, UserSettings, IRequest> CreateRequest { get; set; }
+        public Func<string, UserSettings, IRequest<Unit>> CreateRequest { get; set; }
         public bool RunOnType { get; set; }
         public string CurrentResult { get; set; }
         public Func<string, string> ProcessResultForClipboard { get; set; }

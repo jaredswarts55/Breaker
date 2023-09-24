@@ -10,6 +10,7 @@ using System.Windows;
 using Breaker.Core.Commands.Requests;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
+using Breaker.Core.Services.Base;
 using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
 using MediatR;
@@ -19,11 +20,18 @@ using static NullFight.FunctionalExtensions;
 
 namespace Breaker.Core.Listings.Handlers
 {
-    public class ExecuteCopyGuidRequestHandler : IRequestHandler<ExecuteCopyGuidRequest>
+    public class ExecuteCopyGuidRequestHandler : IRequestHandler<ExecuteCopyGuidRequest, Unit>
     {
+        private readonly IClipboardHandler _clipboardHandler;
+
+        public ExecuteCopyGuidRequestHandler(IClipboardHandler clipboardHandler)
+        {
+            _clipboardHandler = clipboardHandler;
+        }
+
         public Task<Unit> Handle(ExecuteCopyGuidRequest request, CancellationToken cancellationToken)
         {
-            Clipboard.SetText(Guid.NewGuid().ToString());
+            _clipboardHandler.SetText(Guid.NewGuid().ToString());
             return Unit.Task;
         }
     }

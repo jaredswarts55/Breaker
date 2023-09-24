@@ -7,13 +7,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Breaker.Core.Events;
 using Breaker.Core.Listings.Requests;
 using Breaker.Core.Models;
 using Breaker.Core.Services;
 using Breaker.Events;
 using Breaker.Utilities;
 using Breaker.ViewModels.SubModels;
-using Caliburn.Micro;
 using Jint;
 using MediatR;
 using NullFight;
@@ -22,7 +22,7 @@ using static NullFight.FunctionalExtensions;
 
 namespace Breaker.Core.Listings.Handlers
 {
-    public class ExecuteJavascriptRequestHandler : IRequestHandler<ExecuteJavascriptRequest>
+    public class ExecuteJavascriptRequestHandler : IRequestHandler<ExecuteJavascriptRequest, Unit>
     {
         private readonly IEventAggregator _eventAggregator;
         const string JavascriptCommandHeader = "Javascript Command";
